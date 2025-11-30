@@ -3,6 +3,8 @@ package scanner
 import (
 	"bytes"
 	"crypto/hmac"
+	"crypto/md5"
+	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
@@ -130,12 +132,12 @@ func testFutureTimestamp(endpoint models.Endpoint, session *models.Session) []mo
 			Type:        "Callback Timestamp Validation",
 			Severity:    "MEDIUM",
 			Title:       "Webhook Accepts Future Timestamps",
-			Description: fmt.Sprintf("Server accepted webhook with future timestamp (1 hour ahead). This could enable timing attacks.", ),
+			Description: "Server accepted webhook with future timestamp (1 hour ahead). This could enable timing attacks and bypass replay protection.",
 			Proof:       fmt.Sprintf("POST %s with future timestamp=%d, received %d", endpoint.URL, futureTimestamp, resp.StatusCode),
 			Timestamp:   time.Now(),
 			CWE:         "CWE-696", // Incorrect Behavior Order
-			CVSSScore:   5.3,
-			CVSSVector:  "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N",
+			CVSSScore:   6.5,
+			CVSSVector:  "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
 			Confidence:  "Medium",
 			Remediation: "Reject webhooks with timestamps more than 5 minutes in the future",
 		})
@@ -210,6 +212,9 @@ func testIPSpoofing(endpoint models.Endpoint, session *models.Session) []models.
 		"X-Originating-IP":  "127.0.0.1",
 		"X-Client-IP":       "127.0.0.1",
 		"True-Client-IP":    "127.0.0.1",
+		"Forwarded":         "for=127.0.0.1",       // RFC 7239
+		"CF-Connecting-IP":  "127.0.0.1",           // Cloudflare
+		"X-Azure-ClientIP":  "127.0.0.1",           // Azure
 	}
 	
 	for headerName, headerValue := range spoofHeaders {
@@ -268,7 +273,9 @@ func testMultipleSignatureAlgorithms(endpoint models.Endpoint, session *models.S
 	algorithms := map[string]func([]byte, string) string{
 		"HMAC-SHA256": generateHMACSHA256,
 		"HMAC-SHA512": generateHMACSHA512,
-		"Weak-MD5":    generateWeakSignature,
+		"HMAC-SHA1":   generateHMACSHA1,   // Deprecated/weak
+		"HMAC-MD5":    generateHMACMD5,    // Broken
+		"Weak-MD5":    generateWeakSignature, // Very weak
 	}
 	
 	for algoName, signFunc := range algorithms {
@@ -287,20 +294,41 @@ func testMultipleSignatureAlgorithms(endpoint models.Endpoint, session *models.S
 		}
 		resp.Body.Close()
 		
-		if resp.StatusCode >= 200 && resp.StatusCode < 300 && algoName == "Weak-MD5" {
-			vulns = append(vulns, models.Vulnerability{
-				Type:        "Callback Weak Signature",
-				Severity:    "MEDIUM",
-				Title:       "Webhook Uses Weak Signature Algorithm",
-				Description: "Server accepts MD5-based signatures which are cryptographically weak",
-				Proof:       fmt.Sprintf("POST %s with MD5 signature, received %d", endpoint.URL, resp.StatusCode),
-				Timestamp:   time.Now(),
-				CWE:         "CWE-327", // Use of Broken Cryptographic Algorithm
-				CVSSScore:   5.9,
-				CVSSVector:  "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N",
-				Confidence:  "Medium",
-				Remediation: "Use HMAC-SHA256 or stronger algorithms for webhook signatures",
-			})
+		// Report if server accepts weak algorithms
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			if algoName == "HMAC-MD5" || algoName == "Weak-MD5" {
+				vulns = append(vulns, models.Vulnerability{
+					Type:        "Callback Weak Signature",
+					Severity:    "HIGH",
+					Title:       fmt.Sprintf("Webhook Uses Broken Signature Algorithm (%s)", algoName),
+					Description: "Server accepts MD5-based signatures which are cryptographically broken and should not be used",
+					Proof:       fmt.Sprintf("POST %s with %s signature, received %d", endpoint.URL, algoName, resp.StatusCode),
+					Timestamp:   time.Now(),
+					CWE:         "CWE-327", // Use of Broken Cryptographic Algorithm
+					CVSSScore:   7.5,
+					CVSSVector:  "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+					Confidence:  "High",
+					Remediation: "Use HMAC-SHA256 or stronger algorithms. Disable MD5 and SHA1.",
+					References: []string{
+						"https://cwe.mitre.org/data/definitions/327.html",
+						"https://tools.ietf.org/html/rfc6151", // MD5 deprecation
+					},
+				})
+			} else if algoName == "HMAC-SHA1" {
+				vulns = append(vulns, models.Vulnerability{
+					Type:        "Callback Weak Signature",
+					Severity:    "MEDIUM",
+					Title:       "Webhook Uses Deprecated Signature Algorithm (SHA1)",
+					Description: "Server accepts SHA1-based signatures which are deprecated and should be upgraded",
+					Proof:       fmt.Sprintf("POST %s with HMAC-SHA1 signature, received %d", endpoint.URL, resp.StatusCode),
+					Timestamp:   time.Now(),
+					CWE:         "CWE-327",
+					CVSSScore:   5.9,
+					CVSSVector:  "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N",
+					Confidence:  "Medium",
+					Remediation: "Upgrade to HMAC-SHA256 or SHA512",
+				})
+			}
 		}
 	}
 	
@@ -366,6 +394,18 @@ func generateHMACSHA256(data []byte, secret string) string {
 
 func generateHMACSHA512(data []byte, secret string) string {
 	h := hmac.New(sha512.New, []byte(secret))
+	h.Write(data)
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+func generateHMACSHA1(data []byte, secret string) string {
+	h := hmac.New(sha1.New, []byte(secret))
+	h.Write(data)
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+func generateHMACMD5(data []byte, secret string) string {
+	h := hmac.New(md5.New, []byte(secret))
 	h.Write(data)
 	return hex.EncodeToString(h.Sum(nil))
 }

@@ -256,16 +256,16 @@ func testIdempotencyCaseSensitivity(endpoint models.Endpoint, session *models.Se
 	if resp2.StatusCode >= 200 && resp2.StatusCode < 300 {
 		vulns = append(vulns, models.Vulnerability{
 			Type:        "Idempotency Key Case Sensitivity",
-			Severity:    "LOW",
+			Severity:    "MEDIUM",
 			Title:       "Idempotency Keys Not Case-Sensitive",
-			Description: "Server treats idempotency keys as case-insensitive, which could lead to unexpected collisions.",
+			Description: "Server treats idempotency keys as case-insensitive, which could lead to unexpected collisions and bypass idempotency protection.",
 			Endpoint:    endpoint.URL,
 			Method:      endpoint.Method,
 			Proof:       fmt.Sprintf("Keys '%s' and '%s' treated as same", baseKey, lowerKey),
 			Timestamp:   time.Now(),
 			CWE:         "CWE-178", // Improper Handling of Case Sensitivity
-			CVSSScore:   3.7,
-			CVSSVector:  "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N",
+			CVSSScore:   5.3,
+			CVSSVector:  "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N",
 			Confidence:  "Medium",
 			Remediation: "Treat idempotency keys as case-sensitive to prevent unintended collisions.",
 		})
