@@ -1,9 +1,6 @@
 package discovery
 
 import (
-	"fmt"
-	"net/url"
-	"strings"
 	"sync"
 	"time"
 

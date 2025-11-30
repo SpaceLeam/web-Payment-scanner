@@ -16,7 +16,7 @@ import (
 type PathBruteForcer struct {
 	BaseURL     string
 	WordlistPath string
-	Client      *utils.HTTPClient // Wrapper needed or use standard client
+	Client      *http.Client
 	logger      *utils.Logger
 	concurrency int
 }
@@ -43,7 +43,6 @@ func (p *PathBruteForcer) Start() ([]models.Endpoint, error) {
 	p.logger.Info("Loaded %d paths from wordlist", len(paths))
 	
 	endpoints := make([]models.Endpoint, 0)
-	var mu sync.Mutex
 	
 	// Worker pool
 	jobs := make(chan string, len(paths))
