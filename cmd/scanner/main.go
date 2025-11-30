@@ -110,18 +110,25 @@ func runScan(cmd *cobra.Command, args []string) {
 	}
 	
 	// Session management
+	sessionTTL := 6 * time.Hour // P1: Reduced from 20 days to 6 hours
 	var session *models.Session
 	var br *browser.Browser
 	var wsi *browser.WSInterceptor
 	
-	sessionFile := fmt.Sprintf("sessions/session_%x.json", md5.Sum([]byte(loginURL+targetURL)))
+	hash := fmt.Sprintf("%x", md5.Sum([]byte(loginURL+targetURL)))
+	sessionFile := fmt.Sprintf("sessions/session_%s.json", hash)
 	
 	// Try load cached session
 	if !skipSessionCache {
-		if cachedSession, err := browser.LoadSessionFromFile(sessionFile); err == nil {
-			if time.Since(cachedSession.CreatedAt) < 20*24*time.Hour {
-				logger.Success("Using cached session (age: %v)", time.Since(cachedSession.CreatedAt).Round(time.Hour))
+		if cachedSession, err := browser.LoadSessionFromFile(sessionFile); err == nil && cachedSession != nil {
+			if time.Since(cachedSession.CreatedAt) < sessionTTL {
+				age := time.Since(cachedSession.CreatedAt)
+				logger.Success("Using cached session (age: %s)", age.Round(time.Second))
 				session = cachedSession
+			} else {
+				logger.Warn("Cached session expired (age: %s > %s TTL)", 
+					time.Since(cachedSession.CreatedAt).Round(time.Hour),
+					sessionTTL)
 			}
 		}
 	}
