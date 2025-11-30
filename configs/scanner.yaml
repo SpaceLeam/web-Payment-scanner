@@ -1,0 +1,36 @@
+scanner:
+  # Target configuration
+  target_url: ""
+  login_url: ""
+  
+  # Browser settings
+  browser: "firefox" # firefox, chromium, webkit
+  headless: false
+  timeout: 30s
+  
+  # Scan settings
+  concurrent_requests: 50
+  max_depth: 3
+  
+  # Discovery modules
+  discovery:
+    enable_crawl: true
+    enable_wayback: true
+    enable_common_paths: true
+    enable_js_analysis: true
+    
+  # Vulnerability scanners
+  scanners:
+    enable_race_condition: true
+    enable_price_manipulation: true
+    enable_idor: true
+    enable_otp_security: true
+    enable_callback_auth: true
+    enable_amount_validation: true
+    enable_idempotency: true
+    
+  # Reporting
+  report:
+    output_dir: "./reports"
+    formats: ["json", "html", "console"]
+    verbose: false
