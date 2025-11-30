@@ -3,6 +3,7 @@ package discovery
 import (
 	"bufio"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
