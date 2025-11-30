@@ -1,7 +1,10 @@
+```go
 package scanner
 
 import (
+	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -74,4 +77,73 @@ func DetectWAF(targetURL string) string {
 	}
 	
 	return "None Detected"
+}
+
+// AdaptiveEvasion applies evasion techniques when WAF is detected
+type EvasionContext struct {
+	CaseVariation bool
+	URLEncoding   bool
+	VerbTampering bool
+	SlowDown      bool
+	RateLimited   int // Count of 429/403 responses
+}
+
+// ApplyEvasion modifies request to evade WAF
+func (ec *EvasionContext) ApplyEvasion(req *http.Request, payload string) string {
+	if ec.CaseVariation {
+		payload = applyCaseVariation(payload)
+	}
+	
+	if ec.URLEncoding {
+		payload = applyDoubleEncoding(payload)
+	}
+	
+	if ec.VerbTampering && req.Method == "POST" {
+		req.Method = "PUT" // Try alternative verb
+	}
+	
+	return payload
+}
+
+// CheckRateLimiting detects if response indicates rate limiting
+func (ec *EvasionContext) CheckRateLimiting(statusCode int) bool {
+	if statusCode == 429 || statusCode == 403 {
+		ec.RateLimited++
+		ec.SlowDown = true
+		return true
+	}
+	return false
+}
+
+// GetDelay returns adaptive delay based on rate limiting
+func (ec *EvasionContext) GetDelay() time.Duration {
+	if ec.RateLimited == 0 {
+		return 0
+	}
+	
+	// Exponential backoff: 1s, 2s, 4s, 8s (max)
+	delay := time.Duration(1<<uint(ec.RateLimited-1)) * time.Second
+	if delay > 8*time.Second {
+		delay = 8 * time.Second
+	}
+	return delay
+}
+
+func applyCaseVariation(s string) string {
+	// PaYmEnT → varies case
+	result := ""
+	for i, c := range s {
+		if i%2 == 0 {
+			result += strings.ToUpper(string(c))
+		} else {
+			result += strings.ToLower(string(c))
+		}
+	}
+	return result
+}
+
+func applyDoubleEncoding(s string) string {
+	// URL encode twice
+	encoded := url.QueryEscape(s)
+	return url.QueryEscape(encoded)
 }
