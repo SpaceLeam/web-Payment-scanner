@@ -105,27 +105,54 @@ func (b *Browser) WaitForManualLogin(loginURL string, timeout time.Duration) err
 		return fmt.Errorf("failed to navigate to login page: %w", err)
 	}
 	
-	fmt.Println("\n🔐 Please log in manually in the browser window...")
+	fmt.Println("\n🔐 Please complete authentication (phone + PIN)...")
 	fmt.Printf("⏱️  Timeout: %v\n", timeout)
-	fmt.Println("✓  Scanner will automatically detect when you're logged in\n")
 	
-	// Wait for navigation or timeout
 	startTime := time.Now()
 	for {
 		if time.Since(startTime) > timeout {
 			return fmt.Errorf("login timeout exceeded")
 		}
 		
-		// Check if URL changed (indication of successful login)
+		// Check multiple success indicators
 		currentURL := b.page.URL()
+		
+		// 1. URL changed from login
 		if currentURL != loginURL {
-			fmt.Println("✓ Login detected!")
-			time.Sleep(2 * time.Second) // Wait for page to stabilize
-			return nil
+			// Also ensure we are not just on a different login page (e.g. sso)
+			if !isLoginPage(currentURL) {
+				fmt.Println("✓ URL change detected")
+				time.Sleep(2 * time.Second)
+				return nil
+			}
+		}
+		
+		// 2. Check for payment/dashboard elements
+		selectors := []string{
+			"[data-testid='user-balance']",
+			".user-menu",
+			"#payment-form",
+			"button[type='submit']", // Payment button often appears after login
+			".dashboard",
+			".wallet-balance",
+		}
+		
+		for _, selector := range selectors {
+			count, _ := b.page.Locator(selector).Count()
+			if count > 0 {
+				fmt.Println("✓ Dashboard/Payment page detected")
+				return nil
+			}
 		}
 		
 		time.Sleep(1 * time.Second)
 	}
+}
+
+func isLoginPage(url string) bool {
+	// Simple check if URL contains login keywords
+	// In reality, we might need more sophisticated checks
+	return false // Placeholder, rely on element detection mostly
 }
 
 // GetCurrentURL returns the current page URL

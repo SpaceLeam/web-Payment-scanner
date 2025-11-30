@@ -49,6 +49,12 @@ type Session struct {
 	Headers       map[string]string
 	LocalStorage  map[string]string
 	SessionStorage map[string]string
+	
+	// WebSocket session support
+	WebSocketURL   string
+	SessionToken   string
+	URLToken       string  // Token from URL path
+	
 	Authenticated bool
 	UserAgent     string
 	CreatedAt     time.Time

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/md5"
 	"fmt"
 	"os"
 	"time"
@@ -15,77 +16,58 @@ import (
 )
 
 var (
-	// Version information
-	version = "0.1.0"
+	version = "0.2.0"
 	
-	// Global flags
-	verbose    bool
-	headless   bool
-	browserType string
-	loginURL   string
-	timeout    int
-	
-	// Scan flags
-	targetURL string
-	outputDir string
-	wordlistPath string
-	maxDepth int
-	
-	// Discovery flags
-	enableCrawl       bool
-	enableWayback     bool
-	enableCommonPaths bool
-	enableJSAnalysis  bool
-	
-	// Scanner flags
-	enableRace      bool
-	enablePrice     bool
-	enableIDOR      bool
-	enableOTP       bool
-	enableCallback  bool
-	enableAmount    bool
-	enableIdempotency bool
+	// Flags
+	verbose, headless bool
+	browserType, loginURL, targetURL, outputDir, wordlistPath string
+	timeout, maxDepth int
+	enableCrawl, enableWayback, enableCommonPaths, enableJSAnalysis bool
+	enableRace, enablePrice, enableIDOR, enableOTP, enableCallback, enableAmount, enableIdempotency bool
+	enableWSInterceptor bool // NEW
+	skipSessionCache bool    // NEW
 )
 
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "scanner",
 		Short: "Web Payment Security Scanner",
-		Long: `🛡️  Web Payment Scanner - Automated payment security testing tool
-		
-For authorized penetration testing only.
-Detects race conditions, price manipulation, IDOR, and more.`,
+		Long:  `🛡️ Payment scanner with WebSocket support`,
 		Version: version,
 		Run:     runScan,
 	}
 	
 	// Global flags
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
-	rootCmd.PersistentFlags().BoolVar(&headless, "headless", false, "Run browser in headless mode")
-	rootCmd.PersistentFlags().StringVarP(&browserType, "browser", "b", "firefox", "Browser type (firefox, chromium, webkit)")
-	rootCmd.PersistentFlags().IntVarP(&timeout, "timeout", "t", 300, "Login timeout in seconds")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
+	rootCmd.PersistentFlags().BoolVar(&headless, "headless", false, "Headless browser")
+	rootCmd.PersistentFlags().StringVarP(&browserType, "browser", "b", "firefox", "Browser type")
+	rootCmd.PersistentFlags().IntVarP(&timeout, "timeout", "t", 300, "Login timeout (seconds)")
 	
 	// Scan flags
-	rootCmd.Flags().StringVarP(&targetURL, "target", "u", "", "Target URL to scan (required)")
-	rootCmd.Flags().StringVarP(&loginURL, "login", "l", "", "Login URL (if different from target)")
-	rootCmd.Flags().StringVarP(&outputDir, "output", "o", "reports", "Output directory for reports")
+	rootCmd.Flags().StringVarP(&targetURL, "target", "u", "", "Target URL (required)")
+	rootCmd.Flags().StringVarP(&loginURL, "login", "l", "", "Login URL")
+	rootCmd.Flags().StringVarP(&outputDir, "output", "o", "reports", "Output directory")
 	rootCmd.Flags().StringVarP(&wordlistPath, "wordlist", "w", "configs/wordlists/payment_paths.txt", "Path to wordlist file")
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 3, "Max crawl depth")
 	
-	// Discovery flags
+	// Discovery
 	rootCmd.Flags().BoolVar(&enableCrawl, "crawl", true, "Enable crawler")
-	rootCmd.Flags().BoolVar(&enableWayback, "wayback", true, "Enable Wayback Machine discovery")
-	rootCmd.Flags().BoolVar(&enableCommonPaths, "common-paths", true, "Enable common path brute-forcing")
-	rootCmd.Flags().BoolVar(&enableJSAnalysis, "js-analysis", true, "Enable JavaScript analysis")
+	rootCmd.Flags().BoolVar(&enableWayback, "wayback", true, "Enable Wayback")
+	rootCmd.Flags().BoolVar(&enableCommonPaths, "common-paths", true, "Enable path brute-force")
+	rootCmd.Flags().BoolVar(&enableJSAnalysis, "js-analysis", true, "Enable JS analysis")
 	
-	// Scanner flags
-	rootCmd.Flags().BoolVar(&enableRace, "race", true, "Enable Race Condition scanner")
-	rootCmd.Flags().BoolVar(&enablePrice, "price", true, "Enable Price Manipulation scanner")
-	rootCmd.Flags().BoolVar(&enableIDOR, "idor", true, "Enable IDOR scanner")
-	rootCmd.Flags().BoolVar(&enableOTP, "otp", true, "Enable OTP Security scanner")
-	rootCmd.Flags().BoolVar(&enableCallback, "callback", true, "Enable Callback/Webhook scanner")
-	rootCmd.Flags().BoolVar(&enableAmount, "amount", true, "Enable Amount Validation scanner")
-	rootCmd.Flags().BoolVar(&enableIdempotency, "idempotency", true, "Enable Idempotency scanner")
+	// Scanners
+	rootCmd.Flags().BoolVar(&enableRace, "race", true, "Enable Race Condition")
+	rootCmd.Flags().BoolVar(&enablePrice, "price", true, "Enable Price Manipulation")
+	rootCmd.Flags().BoolVar(&enableIDOR, "idor", true, "Enable IDOR")
+	rootCmd.Flags().BoolVar(&enableOTP, "otp", true, "Enable OTP Security")
+	rootCmd.Flags().BoolVar(&enableCallback, "callback", true, "Enable Callback Auth")
+	rootCmd.Flags().BoolVar(&enableAmount, "amount", true, "Enable Amount Validation")
+	rootCmd.Flags().BoolVar(&enableIdempotency, "idempotency", true, "Enable Idempotency")
+	
+	// WebSocket
+	rootCmd.Flags().BoolVar(&enableWSInterceptor, "ws-intercept", true, "Enable WebSocket interceptor")
+	rootCmd.Flags().BoolVar(&skipSessionCache, "no-cache", false, "Skip session cache")
 	
 	rootCmd.MarkFlagRequired("target")
 	
@@ -97,14 +79,12 @@ Detects race conditions, price manipulation, IDOR, and more.`,
 
 func runScan(cmd *cobra.Command, args []string) {
 	logger := utils.NewLogger(verbose)
-	logger.Banner("🛡️  Web Payment Scanner v" + version)
+	logger.Banner("🛡️ Web Payment Scanner v" + version)
 	
-	// Validate target
 	if !utils.IsValidURL(targetURL) {
-		logger.Fatal(fmt.Errorf("invalid target URL: %s", targetURL))
+		logger.Fatal(fmt.Errorf("invalid target URL"))
 	}
 	
-	// Setup config
 	config := models.ScanConfig{
 		TargetURL:          targetURL,
 		LoginURL:           loginURL,
@@ -129,106 +109,154 @@ func runScan(cmd *cobra.Command, args []string) {
 		Domain:             utils.ExtractDomain(targetURL),
 	}
 	
-	// 1. Initialize Browser & Login
-	logger.Section("Phase 0: Initialization & Authentication")
-	
-	// Check if session file exists
-	sessionFile := "session.json"
+	// Session management
 	var session *models.Session
+	var br *browser.Browser
+	var wsi *browser.WSInterceptor
 	
-	if _, err := os.Stat(sessionFile); err == nil {
-		logger.Info("Found existing session file: %s", sessionFile)
-		session, err = browser.LoadSessionFromFile(sessionFile)
-		if err != nil {
-			logger.Warn("Failed to load session: %v", err)
-		} else {
-			logger.Success("Loaded session with %d cookies", len(session.Cookies))
+	sessionFile := fmt.Sprintf("sessions/session_%x.json", md5.Sum([]byte(loginURL+targetURL)))
+	
+	// Try load cached session
+	if !skipSessionCache {
+		if cachedSession, err := browser.LoadSessionFromFile(sessionFile); err == nil {
+			if time.Since(cachedSession.CreatedAt) < 20*24*time.Hour {
+				logger.Success("Using cached session (age: %v)", time.Since(cachedSession.CreatedAt).Round(time.Hour))
+				session = cachedSession
+			}
 		}
 	}
 	
-	br, err := browser.NewBrowser(browserType, headless)
-	if err != nil {
-		logger.Fatal(err)
-	}
-	defer br.Close()
-	
-	// If no session or login requested
-	if session == nil || loginURL != "" {
-		// Handle login if URL provided
+	// Login if no valid session
+	if session == nil {
+		logger.Section("Phase 0: Authentication")
+		
+		var err error
+		br, err = browser.NewBrowser(browserType, headless)
+		if err != nil {
+			logger.Fatal(err)
+		}
+		
+		// Enable WebSocket interceptor BEFORE login
+		if enableWSInterceptor {
+			wsi = browser.NewWSInterceptor()
+			if err := wsi.Enable(br.GetPage()); err != nil {
+				logger.Error("Failed to enable WS interceptor: %v", err)
+			} else {
+				logger.Success("WebSocket interceptor enabled")
+			}
+		}
+		
+		// Login
 		if loginURL != "" {
-			logger.Info("Waiting for manual login at %s...", loginURL)
+			logger.Info("Navigating to login page...")
 			err = br.WaitForManualLogin(loginURL, config.BrowserTimeout)
 			if err != nil {
 				logger.Fatal(fmt.Errorf("login failed: %w", err))
 			}
-			logger.Success("Login detected!")
-			
-			// Extract and save session
-			session, err = br.ExtractSession()
-			if err != nil {
-				logger.Error("Failed to extract session: %v", err)
-			} else {
-				logger.Success("Session extracted (%d cookies)", len(session.Cookies))
-				if err := browser.SaveSessionToFile(session, sessionFile); err != nil {
-					logger.Warn("Failed to save session: %v", err)
-				} else {
-					logger.Success("Session saved to %s", sessionFile)
-				}
-			}
 		} else {
-			logger.Info("No login URL provided and no session found. Proceeding as anonymous.")
-			// Create empty session
-			session = &models.Session{
-				Cookies: make(map[string]string),
-				Headers: make(map[string]string),
+			// Navigate to target directly
+			err = br.Navigate(targetURL)
+			if err != nil {
+				logger.Fatal(err)
 			}
 		}
+		
+		logger.Success("Authentication complete")
+		
+		// Wait for WebSocket connection
+		if enableWSInterceptor {
+			logger.Info("Waiting for WebSocket connection...")
+			time.Sleep(3 * time.Second)
+			
+			wsInfo := wsi.GetConnectionInfo(br.GetPage())
+			if wsInfo != nil && wsInfo["connected"].(bool) {
+				logger.Success("WebSocket connected: %s", wsInfo["url"])
+			}
+		}
+		
+		// Extract session
+		session, err = browser.ExtractWebSocketSession(br.GetPage())
+		if err != nil {
+			logger.Error("Failed to extract session: %v", err)
+		} else {
+			logger.Success("Session extracted (%d cookies, token: %s)", 
+				len(session.Cookies), 
+				truncate(session.SessionToken, 20))
+		}
+		
+		// Save session
+		os.MkdirAll("sessions", 0700)
+		if err := browser.SaveSessionToFile(session, sessionFile); err != nil {
+			logger.Warn("Failed to save session: %v", err)
+		} else {
+			logger.Success("Session cached to: %s", sessionFile)
+		}
 	} else {
-		// We have a loaded session, we should probably load cookies into browser if we want to use it for crawling
-		// But for now, we pass it to the engine.
-		// Ideally: br.LoadCookies(session.Cookies)
+		// Reuse browser with cached session (optional)
+		// For now, we skip browser for cached sessions unless needed
+		logger.Info("Skipping browser (using cached session)")
 	}
 	
-	// 2. Initialize Engine
+	// Initialize engine
 	engine := scanner.NewEngine(config, session, br)
 	
-	// 3. Start Discovery
+	// Discovery
 	startTime := time.Now()
 	if err := engine.StartDiscovery(); err != nil {
 		logger.Error("Discovery failed: %v", err)
 	}
 	
-	// 4. Start Scanning
+	// Scanning
 	if err := engine.StartScanning(); err != nil {
 		logger.Error("Scanning failed: %v", err)
 	}
 	
-	// 5. Generate Reports
+	// WebSocket-specific tests
+	if enableWSInterceptor && wsi != nil && br != nil {
+		logger.Section("Phase 2b: WebSocket Scanning")
+		
+		// Show traffic summary
+		wsi.PrintSummary()
+		
+		// Test race conditions
+		if enableRace {
+			logger.Info("Testing WebSocket race conditions...")
+			wsVulns := scanner.TestWebSocketRaceCondition(br.GetPage(), wsi, 10)
+			engine.AddVulnerabilities(wsVulns)
+		}
+		
+		// Test replay
+		logger.Info("Testing WebSocket replay attacks...")
+		replayVulns := scanner.TestWebSocketReplay(br.GetPage(), wsi)
+		engine.AddVulnerabilities(replayVulns)
+		
+		// Test amount manipulation
+		if enablePrice {
+			logger.Info("Testing WebSocket amount manipulation...")
+			amountVulns := scanner.TestWebSocketAmountManipulation(br.GetPage(), wsi)
+			engine.AddVulnerabilities(amountVulns)
+		}
+	}
+	
+	// Cleanup browser
+	if br != nil {
+		br.Close()
+	}
+	
+	// Reports
 	logger.Section("Phase 3: Reporting")
 	result := engine.GetResults()
 	result.Duration = time.Since(startTime)
 	
-	// Console Report
 	reporter.PrintConsoleSummary(result)
 	
-	// JSON Report
-	jsonFile, err := reporter.GenerateJSONReport(result, outputDir)
-	if err != nil {
-		logger.Error("Failed to generate JSON report: %v", err)
-	} else {
-		logger.Success("JSON report saved to: %s", jsonFile)
-	}
+	jsonFile, _ := reporter.GenerateJSONReport(result, outputDir)
+	logger.Success("JSON: %s", jsonFile)
 	
-	// HTML Report
-	htmlFile, err := reporter.GenerateHTMLReport(result, outputDir)
-	if err != nil {
-		logger.Error("Failed to generate HTML report: %v", err)
-	} else {
-		logger.Success("HTML report saved to: %s", htmlFile)
-	}
+	htmlFile, _ := reporter.GenerateHTMLReport(result, outputDir)
+	logger.Success("HTML: %s", htmlFile)
 	
-	fmt.Println()
-	color.Green("✨ Scan completed successfully!")
+	color.Green("\n✨ Scan completed!")
 }
 
 func truncate(s string, maxLen int) string {

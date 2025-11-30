@@ -49,10 +49,8 @@ func (e *Engine) StartDiscovery() error {
 	
 	var allEndpoints []models.Endpoint
 	var mu sync.Mutex
-	var wg sync.WaitGroup
-	
 	// Rate Limiter for discovery (conservative)
-	limiter := utils.NewRateLimiter(10) // 10 req/sec default
+	_ = utils.NewRateLimiter(10) // 10 req/sec default (unused for now)
 	
 	// 1. Crawler
 	if e.Config.EnableCrawl {
@@ -170,6 +168,11 @@ func (e *Engine) addVulnerabilities(vulns []models.Vulnerability) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.Vulns = append(e.Vulns, vulns...)
+}
+
+// AddVulnerabilities adds vulnerabilities (public method for external scanners)
+func (e *Engine) AddVulnerabilities(vulns []models.Vulnerability) {
+	e.addVulnerabilities(vulns)
 }
 
 // GetResults returns the scan results

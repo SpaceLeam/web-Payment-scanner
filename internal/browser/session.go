@@ -2,11 +2,77 @@ package browser
 
 import (
 	"encoding/json"
-	"os"
+	"regexp"
+	"time"
 	
 	"github.com/SpaceLeam/web-Payment-scanner/internal/models"
 	"github.com/playwright-community/playwright-go"
 )
+
+// ExtractWebSocketSession extracts session including WebSocket data
+func ExtractWebSocketSession(page playwright.Page) (*models.Session, error) {
+	session := &models.Session{
+		Authenticated:  true,
+		CreatedAt:      time.Now(),
+		Cookies:        make(map[string]string),
+		Headers:        make(map[string]string),
+		LocalStorage:   make(map[string]string),
+		SessionStorage: make(map[string]string),
+	}
+	
+	// Extract cookies
+	if cookies, err := page.Context().Cookies(); err == nil {
+		for _, cookie := range cookies {
+			session.Cookies[cookie.Name] = cookie.Value
+		}
+	}
+	
+	// Extract localStorage
+	if ls, err := ExtractLocalStorage(page); err == nil {
+		session.LocalStorage = ls
+	}
+	
+	// Extract sessionStorage
+	if ss, err := ExtractSessionStorage(page); err == nil {
+		session.SessionStorage = ss
+	}
+	
+	// Extract WebSocket info
+	wsInfo, err := page.Evaluate(`() => {
+		const ws = window._ws || window.WebSocket || window.socket;
+		return {
+			url: window._wsURL || (ws?.url) || '',
+			connected: window._wsConnected || false,
+			sessionToken: window.sessionToken || 
+						  localStorage.getItem('session_token') || 
+						  localStorage.getItem('authToken') || 
+						  '',
+		};
+	}`)
+	
+	if err == nil {
+		if wsMap, ok := wsInfo.(map[string]interface{}); ok {
+			if url, ok := wsMap["url"].(string); ok {
+				session.WebSocketURL = url
+			}
+			if token, ok := wsMap["sessionToken"].(string); ok && token != "" {
+				session.SessionToken = token
+			}
+		}
+	}
+	
+	// Extract URL token from path (e.g., /H69149884dd2be/pay)
+	currentURL := page.URL()
+	urlTokenRegex := regexp.MustCompile(`/([A-Za-z0-9]{10,})/`)
+	if matches := urlTokenRegex.FindStringSubmatch(currentURL); len(matches) > 1 {
+		session.URLToken = matches[1]
+	}
+	
+	// Set User-Agent
+	session.UserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+	
+	return session, nil
+}
 
 // ExtractCookies extracts cookies from the browser context
 func ExtractCookies(context playwright.BrowserContext) (map[string]string, error) {
