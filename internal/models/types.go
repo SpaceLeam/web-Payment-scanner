@@ -72,22 +72,27 @@ type Endpoint struct {
 	DiscoveredAt time.Time
 }
 
-// Vulnerability represents a discovered security vulnerability
+// Vulnerability represents a detected security issue
 type Vulnerability struct {
-	ID          string
-	Type        string    // "Race Condition", "Price Manipulation", etc.
-	Severity    string    // "CRITICAL", "HIGH", "MEDIUM", "LOW"
+	// Core fields
+	Type        string
+	Severity    string // CRITICAL, HIGH, MEDIUM, LOW, INFO
 	Title       string
 	Description string
-	Endpoint    string
-	Method      string
-	Proof       string    // Evidence/PoC
+	Endpoint    string // For backward compatibility
+	Method      string // For backward compatibility
+	Proof       string
 	Impact      string
-	Remediation string
-	CVSSScore   float64
-	CVSS        string    // CVSS vector string
 	Timestamp   time.Time
 	Verified    bool
+	
+	// Enhanced security metadata
+	CWE          string    // e.g., "CWE-362"
+	CVSSScore    float64   // e.g., 8.5
+	CVSSVector   string    // e.g., "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N"
+	Confidence   string    // "Low", "Medium", "High"
+	Remediation  string    // Code example or fix recommendation
+	References   []string  // Links to OWASP, MITRE, etc.
 	
 	// Additional details
 	Request  string
