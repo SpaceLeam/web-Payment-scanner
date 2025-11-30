@@ -3,9 +3,11 @@ package browser
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/SpaceLeam/web-Payment-scanner/internal/models"
 	"github.com/playwright-community/playwright-go"
 )
 
@@ -21,8 +23,9 @@ type WSMessage struct {
 // WSInterceptor captures WebSocket traffic
 type WSInterceptor struct {
 	messages []WSMessage
-	mu       sync.Mutex
+	mu       sync.RWMutex // Changed to RWMutex for read/write operations
 	active   bool
+	wsURL    string // NEW: Track WebSocket URL for security checks
 }
 
 // NewWSInterceptor creates a new WebSocket interceptor
@@ -53,7 +56,8 @@ func (wsi *WSInterceptor) Enable(page playwright.Page) error {
 			
 			// Store reference globally
 			window._ws = ws;
-			window._wsURL = url;
+			window._wsURL = url; // Store URL
+			window._wsConnected = false;
 			
 			// Intercept send
 			const originalSend = ws.send.bind(ws);
@@ -105,6 +109,13 @@ func (wsi *WSInterceptor) Enable(page playwright.Page) error {
 	
 	if err != nil {
 		return fmt.Errorf("failed to inject WS interceptor: %w", err)
+	}
+	
+	// Extract WebSocket URL if connection already exists
+	if urlInfo, err := page.Evaluate(`() => window._wsURL || ''`); err == nil {
+		if url, ok := urlInfo.(string); ok && url != "" {
+			wsi.wsURL = url
+		}
 	}
 	
 	// Start polling for messages
@@ -314,6 +325,139 @@ func (wsi *WSInterceptor) PrintSummary() {
 		
 		fmt.Printf("%s [%s] %s\n", direction, msg.Timestamp.Format("15:04:05"), preview)
 	}
+}
+
+
+// CheckSecurity performs security analysis on WebSocket connection
+func (wsi *WSInterceptor) CheckSecurity() []models.Vulnerability {
+	wsi.mu.Lock()
+	defer wsi.mu.Unlock()
+	
+	vulns := []models.Vulnerability{}
+	
+	// 1. WSS vs WS check (Cleartext Transmission)
+	if wsi.wsURL != "" && strings.HasPrefix(wsi.wsURL, "ws://") {
+		vulns = append(vulns, models.Vulnerability{
+			Type:        "WebSocket Security",
+			Severity:    "HIGH",
+			Title:       "Unencrypted WebSocket Connection (ws://)",
+			Description: "WebSocket connection uses unencrypted ws:// protocol instead of secure wss://. This exposes payment data in transit.",
+			Endpoint:    wsi.wsURL,
+			Proof:       fmt.Sprintf("WebSocket URL: %s", wsi.wsURL),
+			Timestamp:   time.Now(),
+			CWE:         "CWE-319", // Cleartext Transmission of Sensitive Information
+			CVSSScore:   7.5,
+			CVSSVector:  "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+			Confidence:  "High",
+			Remediation: `Use WSS (wss://) instead of WS (ws://) for all WebSocket connections:
+
+// JavaScript example:
+const ws = new WebSocket('wss://example.com/socket'); // Secure
+// NOT: const ws = new WebSocket('ws://example.com/socket'); // Insecure`,
+			References: []string{
+				"https://cwe.mitre.org/data/definitions/319.html",
+				"https://owasp.org/www-community/vulnerabilities/Insecure_Transport",
+			},
+		})
+	}
+	
+	// 2. Check authentication token presence in messages
+	hasAuth := false
+	for _, msg := range wsi.messages {
+		if containsAuthToken(msg) {
+			hasAuth = true
+			break
+		}
+	}
+	
+	if len(wsi.messages) > 0 && !hasAuth {
+		vulns = append(vulns, models.Vulnerability{
+			Type:        "WebSocket Authentication",
+			Severity:    "HIGH",
+			Title:       "WebSocket Messages Missing Authentication Token",
+			Description: "WebSocket messages do not contain authentication tokens. This could allow unauthorized access to payment operations.",
+			Proof:       fmt.Sprintf("Analyzed %d messages, none contain auth tokens", len(wsi.messages)),
+			Timestamp:   time.Now(),
+			CWE:         "CWE-306", // Missing Authentication for Critical Function
+			CVSSScore:   8.1,
+			CVSSVector:  "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+			Confidence:  "Medium",
+			Remediation: `Include authentication token in WebSocket messages:
+
+// JavaScript example:
+ws.send(JSON.stringify({
+    action: 'payment.create',
+    token: sessionToken, // Authentication token
+    amount: 100
+}));`,
+			References: []string{
+				"https://cwe.mitre.org/data/definitions/306.html",
+			},
+		})
+	}
+	
+	// 3. Check message size (buffer overflow risk)
+	const maxMessageSize = 10 * 1024 * 1024 // 10MB
+	for _, msg := range wsi.messages {
+		if len(msg.Data) > maxMessageSize {
+			vulns = append(vulns, models.Vulnerability{
+				Type:        "WebSocket Message Size",
+				Severity:    "MEDIUM",
+				Title:       "Excessive WebSocket Message Size",
+				Description: fmt.Sprintf("WebSocket message exceeds safe size limit (%d bytes > 10MB). This could indicate lack of server-side validation.", len(msg.Data)),
+				Proof:       fmt.Sprintf("Message size: %d bytes at %s", len(msg.Data), msg.Timestamp.Format(time.RFC3339)),
+				Timestamp:   time.Now(),
+				CWE:         "CWE-770", // Allocation of Resources Without Limits
+				CVSSScore:   5.3,
+				CVSSVector:  "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+				Confidence:  "Low",
+				Remediation: "Implement message size validation on server (max 10MB recommended)",
+			})
+			break // Only report once
+		}
+	}
+	
+	// 4. Check for message injection without session
+	// (This would require actually testing, not just analyzing intercepted traffic)
+	// Leaving as TODO for future enhancement
+	
+	return vulns
+}
+
+// GetWebSocketURL returns the current WebSocket URL
+func (wsi *WSInterceptor) GetWebSocketURL() string {
+	wsi.mu.RLock()
+	defer wsi.mu.RUnlock()
+	return wsi.wsURL
+}
+
+// SetWebSocketURL sets the WebSocket URL (called when connection detected)
+func (wsi *WSInterceptor) SetWebSocketURL(url string) {
+	wsi.mu.Lock()
+	defer wsi.mu.Unlock()
+	wsi.wsURL = url
+}
+
+func containsAuthToken(msg WSMessage) bool {
+	// Check for common auth token field names
+	if msg.Parsed != nil {
+		tokenFields := []string{"token", "authToken", "auth_token", "sessionToken", "session_token", "accessToken", "access_token", "jwt", "bearer"}
+		for _, field := range tokenFields {
+			if _, ok := msg.Parsed[field]; ok {
+				return true
+			}
+		}
+	}
+	
+	// Check in string data
+	authKeywords := []string{"token", "authToken", "sessionToken", "Bearer"}
+	for _, kw := range authKeywords {
+		if contains(msg.Data, kw) {
+			return true
+		}
+	}
+	
+	return false
 }
 
 
