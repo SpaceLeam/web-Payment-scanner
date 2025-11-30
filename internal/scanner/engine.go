@@ -138,7 +138,7 @@ func (e *Engine) StartScanning() error {
 		
 		// Race Condition
 		if e.Config.EnableRaceCondition {
-			vulns := TestRaceCondition(ep, e.Session, e.Config.ConcurrentReqs)
+			vulns := TestRaceCondition(ep, e.Session)
 			e.addVulnerabilities(vulns)
 		}
 		

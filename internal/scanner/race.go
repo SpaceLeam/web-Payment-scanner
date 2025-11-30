@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/SpaceLeam/web-Payment-scanner/internal/models"
-	"github.com/SpaceLeam/web-Payment-scanner/internal/utils"
 )
 
 // TestRaceCondition tests for race condition vulnerabilities
@@ -43,7 +42,7 @@ func testRaceConditionEnhanced(endpoint models.Endpoint, session *models.Session
 	}
 	
 	// 2. Pre-warm connections (send dummy requests)
-	utils.Logger.Info("Warming up connections...")
+	// utils.Logger.Info("Warming up connections...")
 	for i := 0; i < 10; i++ {
 		req, err := http.NewRequest("GET", endpoint.URL, nil)
 		if err != nil {
