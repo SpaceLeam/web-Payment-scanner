@@ -136,19 +136,27 @@ func runScan(cmd *cobra.Command, args []string) {
 			logger.Fatal(err)
 		}
 		
-		// Enable WebSocket interceptor BEFORE login
-		if enableWSInterceptor {
-			wsi = browser.NewWSInterceptor()
-			if err := wsi.Enable(br.GetPage()); err != nil {
-				logger.Error("Failed to enable WS interceptor: %v", err)
-			} else {
-				logger.Success("WebSocket interceptor enabled")
-			}
-		}
-		
 		// Login
 		if loginURL != "" {
+			// Navigate to login page first (to have a page context)
 			logger.Info("Navigating to login page...")
+			err = br.Navigate(loginURL)
+			if err != nil {
+				logger.Fatal(fmt.Errorf("failed to navigate: %w", err))
+			}
+			
+			// Enable WebSocket interceptor BEFORE user login
+			if enableWSInterceptor {
+				wsi = browser.NewWSInterceptor()
+				if err := wsi.Enable(br.GetPage()); err != nil {
+					logger.Error("Failed to enable WS interceptor: %v", err)
+				} else {
+					logger.Success("WebSocket interceptor enabled")
+				}
+			}
+			
+			// Wait for user to complete login
+			logger.Info("Waiting for manual login...")
 			err = br.WaitForManualLogin(loginURL, config.BrowserTimeout)
 			if err != nil {
 				logger.Fatal(fmt.Errorf("login failed: %w", err))
@@ -159,18 +167,31 @@ func runScan(cmd *cobra.Command, args []string) {
 			if err != nil {
 				logger.Fatal(err)
 			}
+			
+			// Enable WS interceptor after navigation
+			if enableWSInterceptor {
+				wsi = browser.NewWSInterceptor()
+				if err := wsi.Enable(br.GetPage()); err != nil {
+					logger.Error("Failed to enable WS interceptor: %v", err)
+				} else {
+					logger.Success("WebSocket interceptor enabled")
+				}
+			}
 		}
 		
 		logger.Success("Authentication complete")
 		
+		// Wait for cookies and WebSocket connection to be established
+		logger.Info("Waiting for session to stabilize...")
+		time.Sleep(3 * time.Second)
+		
 		// Wait for WebSocket connection
-		if enableWSInterceptor {
-			logger.Info("Waiting for WebSocket connection...")
-			time.Sleep(3 * time.Second)
-			
+		if enableWSInterceptor && wsi != nil {
 			wsInfo := wsi.GetConnectionInfo(br.GetPage())
 			if wsInfo != nil && wsInfo["connected"].(bool) {
 				logger.Success("WebSocket connected: %s", wsInfo["url"])
+			} else {
+				logger.Warn("No WebSocket connection detected (site may use HTTP polling)")
 			}
 		}
 		
@@ -179,9 +200,12 @@ func runScan(cmd *cobra.Command, args []string) {
 		if err != nil {
 			logger.Error("Failed to extract session: %v", err)
 		} else {
-			logger.Success("Session extracted (%d cookies, token: %s)", 
-				len(session.Cookies), 
-				truncate(session.SessionToken, 20))
+			cookieCount := len(session.Cookies)
+			tokenPreview := truncate(session.SessionToken, 20)
+			if tokenPreview == "" {
+				tokenPreview = "(none)"
+			}
+			logger.Success("Session extracted (%d cookies, token: %s)", cookieCount, tokenPreview)
 		}
 		
 		// Save session
