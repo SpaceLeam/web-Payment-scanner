@@ -49,6 +49,8 @@ func (e *Engine) StartDiscovery() error {
 	
 	var allEndpoints []models.Endpoint
 	var mu sync.Mutex
+	var wg sync.WaitGroup
+	
 	// Rate Limiter for discovery (conservative)
 	_ = utils.NewRateLimiter(10) // 10 req/sec default (unused for now)
 	
