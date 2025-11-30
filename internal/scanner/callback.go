@@ -2,12 +2,9 @@ package scanner
 
 import (
 	"bytes"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/SpaceLeam/web-Payment-scanner/internal/models"

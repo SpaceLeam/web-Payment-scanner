@@ -1,6 +1,7 @@
 package scanner
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
