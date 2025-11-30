@@ -28,6 +28,8 @@ var (
 	// Scan flags
 	targetURL string
 	outputDir string
+	wordlistPath string
+	maxDepth int
 	
 	// Discovery flags
 	enableCrawl       bool
@@ -67,6 +69,8 @@ Detects race conditions, price manipulation, IDOR, and more.`,
 	rootCmd.Flags().StringVarP(&targetURL, "target", "u", "", "Target URL to scan (required)")
 	rootCmd.Flags().StringVarP(&loginURL, "login", "l", "", "Login URL (if different from target)")
 	rootCmd.Flags().StringVarP(&outputDir, "output", "o", "reports", "Output directory for reports")
+	rootCmd.Flags().StringVarP(&wordlistPath, "wordlist", "w", "configs/wordlists/payment_paths.txt", "Path to wordlist file")
+	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 3, "Max crawl depth")
 	
 	// Discovery flags
 	rootCmd.Flags().BoolVar(&enableCrawl, "crawl", true, "Enable crawler")
@@ -109,6 +113,8 @@ func runScan(cmd *cobra.Command, args []string) {
 		BrowserTimeout:     time.Duration(timeout) * time.Second,
 		OutputDir:          outputDir,
 		Verbose:            verbose,
+		MaxDepth:           maxDepth,
+		WordlistPath:       wordlistPath,
 		EnableCrawl:        enableCrawl,
 		EnableWayback:      enableWayback,
 		EnableCommonPaths:  enableCommonPaths,
@@ -125,31 +131,62 @@ func runScan(cmd *cobra.Command, args []string) {
 	
 	// 1. Initialize Browser & Login
 	logger.Section("Phase 0: Initialization & Authentication")
+	
+	// Check if session file exists
+	sessionFile := "session.json"
+	var session *models.Session
+	
+	if _, err := os.Stat(sessionFile); err == nil {
+		logger.Info("Found existing session file: %s", sessionFile)
+		session, err = browser.LoadSessionFromFile(sessionFile)
+		if err != nil {
+			logger.Warn("Failed to load session: %v", err)
+		} else {
+			logger.Success("Loaded session with %d cookies", len(session.Cookies))
+		}
+	}
+	
 	br, err := browser.NewBrowser(browserType, headless)
 	if err != nil {
 		logger.Fatal(err)
 	}
 	defer br.Close()
 	
-	// Handle login if URL provided
-	if loginURL != "" {
-		logger.Info("Waiting for manual login at %s...", loginURL)
-		err = br.WaitForManualLogin(loginURL, config.BrowserTimeout)
-		if err != nil {
-			logger.Fatal(fmt.Errorf("login failed: %w", err))
+	// If no session or login requested
+	if session == nil || loginURL != "" {
+		// Handle login if URL provided
+		if loginURL != "" {
+			logger.Info("Waiting for manual login at %s...", loginURL)
+			err = br.WaitForManualLogin(loginURL, config.BrowserTimeout)
+			if err != nil {
+				logger.Fatal(fmt.Errorf("login failed: %w", err))
+			}
+			logger.Success("Login detected!")
+			
+			// Extract and save session
+			session, err = br.ExtractSession()
+			if err != nil {
+				logger.Error("Failed to extract session: %v", err)
+			} else {
+				logger.Success("Session extracted (%d cookies)", len(session.Cookies))
+				if err := browser.SaveSessionToFile(session, sessionFile); err != nil {
+					logger.Warn("Failed to save session: %v", err)
+				} else {
+					logger.Success("Session saved to %s", sessionFile)
+				}
+			}
+		} else {
+			logger.Info("No login URL provided and no session found. Proceeding as anonymous.")
+			// Create empty session
+			session = &models.Session{
+				Cookies: make(map[string]string),
+				Headers: make(map[string]string),
+			}
 		}
-		logger.Success("Login detected!")
 	} else {
-		logger.Info("No login URL provided, proceeding without initial auth (or assuming already authenticated context if reused)")
-	}
-	
-	// Extract session
-	session, err := br.ExtractSession()
-	if err != nil {
-		logger.Error("Failed to extract session: %v", err)
-		// Continue anyway?
-	} else {
-		logger.Success("Session extracted (%d cookies)", len(session.Cookies))
+		// We have a loaded session, we should probably load cookies into browser if we want to use it for crawling
+		// But for now, we pass it to the engine.
+		// Ideally: br.LoadCookies(session.Cookies)
 	}
 	
 	// 2. Initialize Engine

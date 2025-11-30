@@ -19,6 +19,7 @@ type ScanConfig struct {
 	ConcurrentReqs int
 	Timeout        time.Duration
 	MaxDepth       int
+	WordlistPath   string
 	AutoDiscovery  bool
 	
 	// Test selection

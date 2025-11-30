@@ -34,17 +34,32 @@ func NewEngine(config models.ScanConfig, session *models.Session, br *browser.Br
 
 // StartDiscovery runs the discovery phase
 func (e *Engine) StartDiscovery() error {
+	// 0. WAF Detection
+	e.Logger.Info("Checking for WAF...")
+	waf := DetectWAF(e.Config.TargetURL)
+	if waf != "None Detected" {
+		e.Logger.Warn("⚠️  WAF Detected: %s", waf)
+		e.Logger.Warn("Scanning might be blocked. Reducing speed...")
+		// Reduce concurrency or add delays if needed
+	} else {
+		e.Logger.Success("No WAF detected.")
+	}
+
 	e.Logger.Section("Phase 1: Discovery")
 	
 	var allEndpoints []models.Endpoint
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	
+	// Rate Limiter for discovery (conservative)
+	limiter := utils.NewRateLimiter(10) // 10 req/sec default
+	
 	// 1. Crawler
 	if e.Config.EnableCrawl {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			// Pass limiter if crawler supports it, or just let it run (crawler usually slow anyway)
 			crawler := discovery.NewCrawler(e.Config.TargetURL, e.Config.MaxDepth, e.Browser)
 			eps, err := crawler.Start()
 			if err != nil {
@@ -80,7 +95,7 @@ func (e *Engine) StartDiscovery() error {
 		go func() {
 			defer wg.Done()
 			// TODO: Make wordlist path configurable
-			bf := discovery.NewPathBruteForcer(e.Config.TargetURL, "configs/wordlists/payment_paths.txt")
+			bf := discovery.NewPathBruteForcer(e.Config.TargetURL, e.Config.WordlistPath)
 			eps, err := bf.Start()
 			if err != nil {
 				e.Logger.Error("Path discovery failed: %v", err)

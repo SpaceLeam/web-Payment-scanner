@@ -154,3 +154,27 @@ func SaveSession(session *models.Session, filepath string) error {
 	_ = data
 	return nil
 }
+
+// SaveSessionToFile saves the session to a JSON file
+func SaveSessionToFile(session *models.Session, filepath string) error {
+	data, err := json.MarshalIndent(session, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath, data, 0600) // 0600 = owner only
+}
+
+// LoadSessionFromFile loads the session from a JSON file
+func LoadSessionFromFile(filepath string) (*models.Session, error) {
+	data, err := os.ReadFile(filepath)
+	if err != nil {
+		return nil, err
+	}
+	
+	var session models.Session
+	err = json.Unmarshal(data, &session)
+	if err != nil {
+		return nil, err
+	}
+	return &session, nil
+}
