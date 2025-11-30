@@ -113,7 +113,7 @@ func testFutureTimestamp(endpoint models.Endpoint, session *models.Session) []mo
 	payloadJSON, _ := json.Marshal(payload)
 	signature := generateHMACSHA256(payloadJSON, "test_secret_key")
 	
-	client := utils.NewHTTPClient()
+	client := utils.NewHTTPClient(10 * time.Second)
 	req, _ := http.NewRequest("POST", endpoint.URL, bytes.NewBuffer(payloadJSON))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Signature", signature)
@@ -158,7 +158,7 @@ func testMissingTimestamp(endpoint models.Endpoint, session *models.Session) []m
 	payloadJSON, _ := json.Marshal(payload)
 	signature := generateHMACSHA256(payloadJSON, "test_secret_key")
 	
-	client := utils.NewHTTPClient()
+	client := utils.NewHTTPClient(10 * time.Second)
 	req, _ := http.NewRequest("POST", endpoint.URL, bytes.NewBuffer(payloadJSON))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Signature", signature)
@@ -213,7 +213,7 @@ func testIPSpoofing(endpoint models.Endpoint, session *models.Session) []models.
 	}
 	
 	for headerName, headerValue := range spoofHeaders {
-		client := utils.NewHTTPClient()
+		client := utils.NewHTTPClient(10 * time.Second)
 		req, _ := http.NewRequest("POST", endpoint.URL, bytes.NewBuffer(payloadJSON))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("X-Signature", signature)
@@ -274,7 +274,7 @@ func testMultipleSignatureAlgorithms(endpoint models.Endpoint, session *models.S
 	for algoName, signFunc := range algorithms {
 		signature := signFunc(payloadJSON, "test_secret_key")
 		
-		client := utils.NewHTTPClient()
+		client := utils.NewHTTPClient(10 * time.Second)
 		req, _ := http.NewRequest("POST", endpoint.URL, bytes.NewBuffer(payloadJSON))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("X-Signature", signature)
@@ -324,7 +324,7 @@ func testSignatureStripEncoding(endpoint models.Endpoint, session *models.Sessio
 	// Try double URL encoding signature
 	doubleEncoded := url.QueryEscape(url.QueryEscape(validSignature))
 	
-	client := utils.NewHTTPClient()
+	client := utils.NewHTTPClient(10 * time.Second)
 	req, _ := http.NewRequest("POST", endpoint.URL, bytes.NewBuffer(payloadJSON))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Signature", doubleEncoded)
