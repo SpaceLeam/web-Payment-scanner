@@ -50,11 +50,12 @@ func (ri *RequestInterceptor) EnableInterception(page playwright.Page) error {
 			headers[k] = v
 		}
 		
+		postData, _ := request.PostData()
 		ri.requests = append(ri.requests, NetworkRequest{
 			URL:     request.URL(),
 			Method:  request.Method(),
 			Headers: headers,
-			Body:    request.PostData(),
+			Body:    postData,
 		})
 	})
 	

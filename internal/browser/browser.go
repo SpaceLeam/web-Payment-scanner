@@ -43,7 +43,7 @@ func NewBrowser(browserType string, headless bool) (*Browser, error) {
 	case "chromium":
 		browser, err = pw.Chromium.Launch(launchOptions)
 	case "webkit":
-		browser, err = pw.Webkit.Launch(launchOptions)
+		browser, err = pw.WebKit.Launch(launchOptions)
 	default:
 		browser, err = pw.Firefox.Launch(launchOptions)
 	}
@@ -63,7 +63,7 @@ func NewBrowser(browserType string, headless bool) (*Browser, error) {
 		Locale:           playwright.String("en-US"),
 		TimezoneId:       playwright.String("America/New_York"),
 		AcceptDownloads:  playwright.Bool(false),
-		IgnoreHTTPSErrors: playwright.Bool(true), // For testing environments
+		IgnoreHttpsErrors: playwright.Bool(true), // For testing environments
 	})
 	
 	if err != nil {
