@@ -1,0 +1,57 @@
+# Binaries
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+
+# Output & Reports
+reports/
+*.log
+output/
+
+# Dependencies
+vendor/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Node (for future web dashboard)
+node_modules/
+dist/
+.env
+.env.local
+
+# Playwright
+.ms-playwright/
+playwright-report/
+test-results/
+
+# Go
+*.out
+coverage.txt
+*.test
+
+# Temporary files
+*.tmp
+tmp/
+temp/
+
+# Sensitive data
+*.key
+*.pem
+*.crt
+secrets/
+credentials/
+sessions/

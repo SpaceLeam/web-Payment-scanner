@@ -1,0 +1,108 @@
+# Common Payment Endpoint Paths
+# Used for endpoint discovery via brute force
+
+# API Endpoints - General
+/api/payment
+/api/payment/create
+/api/payment/process
+/api/payment/verify
+/api/payment/confirm
+/api/payment/status
+/api/payment/cancel
+/api/payment/refund
+/api/payments
+/api/v1/payment
+/api/v2/payment
+/api/v1/payments
+/api/v2/payments
+
+# API Endpoints - Webhooks & Callbacks
+/api/payment/callback
+/api/payment/webhook
+/api/payment/notify
+/api/payment/ipn
+/webhook/payment
+/callback/payment
+/ipn/payment
+/notify/payment
+
+# API Endpoints - Checkout Flow
+/api/checkout
+/api/checkout/create
+/api/checkout/process
+/api/checkout/confirm
+/api/checkout/payment
+/api/cart/checkout
+/api/cart/payment
+
+# API Endpoints - Orders
+/api/order
+/api/order/create
+/api/order/payment
+/api/order/confirm
+/api/order/process
+/api/orders
+/api/orders/payment
+
+# API Endpoints - Transactions
+/api/transaction
+/api/transaction/create
+/api/transaction/verify
+/api/transactions
+/api/purchase
+/api/buy
+
+# API Endpoints - Invoices
+/api/invoice
+/api/invoice/pay
+/api/invoice/payment
+/api/invoices
+
+# API Endpoints - Stripe/Payment Gateway
+/api/stripe/payment
+/api/stripe/webhook
+/api/paypal/payment
+/api/paypal/ipn
+/api/xendit/callback
+/api/midtrans/notification
+
+# Frontend Pages
+/payment
+/checkout
+/pay
+/confirm-payment
+/payment-confirmation
+/order-confirmation
+/cart/checkout
+/cart/payment
+
+# Payment Methods
+/api/payment-method
+/api/payment-methods
+/api/wallet
+/api/balance
+
+# OTP/Verification
+/api/payment/otp
+/api/payment/verify-otp
+/api/payment/send-otp
+
+# Subscription/Recurring
+/api/subscription
+/api/subscription/payment
+/api/recurring/payment
+
+# Admin/Internal (sometimes exposed)
+/admin/payment
+/admin/orders
+/internal/payment
+/dashboard/payments
+
+# Mobile API variants
+/mobile/api/payment
+/app/api/payment
+
+# Versioned APIs
+/v1/payment
+/v2/payment
+/v3/payment
