@@ -1,6 +1,6 @@
 # Web Payment Scanner - Usage Guide
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Basic Scan
 Scan a target URL with default settings:
@@ -23,7 +23,7 @@ Run without visible browser window (good for CI/CD):
 
 ---
 
-## 🛠️ Command Line Options
+##  Command Line Options
 
 | Flag | Shorthand | Description | Default |
 |------|-----------|-------------|---------|
@@ -58,7 +58,7 @@ Disable specific vulnerability checks:
 
 ---
 
-## 📊 Reports
+##  Reports
 
 Reports are generated in the `reports/` directory by default:
 

@@ -1,10 +1,10 @@
 # Legal Notice and Disclaimer
 
-## ⚖️ Terms of Use
+##  Terms of Use
 
 This software ("Web Payment Scanner") is provided for **legitimate security testing purposes only**.
 
-### ✅ Authorized Use
+###  Authorized Use
 
 You MAY use this tool for:
 
@@ -24,7 +24,7 @@ You MAY use this tool for:
    - Validating security implementations
    - Compliance testing (PCI-DSS, etc.)
 
-### ❌ Prohibited Use
+###  Prohibited Use
 
 You MAY NOT use this tool for:
 
@@ -73,17 +73,17 @@ Unauthorized use of this tool may violate:
 
 If you discover vulnerabilities using this tool:
 
-1. ✅ **DO** report them through proper channels:
+1.  **DO** report them through proper channels:
    - Bug bounty programs
    - Security@company.com emails
    - Coordinated disclosure platforms
 
-2. ✅ **DO** provide sufficient detail for reproduction:
+2.  **DO** provide sufficient detail for reproduction:
    - Steps to reproduce
    - Proof of concept (without causing harm)
    - Suggested remediation
 
-3. ❌ **DO NOT**:
+3.  **DO NOT**:
    - Publicly disclose before patch
    - Sell vulnerabilities to malicious actors
    - Exploit vulnerabilities for personal gain
@@ -91,7 +91,7 @@ If you discover vulnerabilities using this tool:
 
 ---
 
-## 🛡️ Disclaimer
+##  Disclaimer
 
 ### No Warranty
 
@@ -118,7 +118,7 @@ The authors and contributors shall **NOT** be liable for:
 
 ---
 
-## 📝 Authorization Checklist
+##  Authorization Checklist
 
 Before using this tool, ensure you have:
 
@@ -164,7 +164,7 @@ For questions about legal use:
 
 ---
 
-## ✍️ Acceptance
+##  Acceptance
 
 **By using this tool, you acknowledge that:**
 
@@ -179,4 +179,4 @@ For questions about legal use:
 
 *Last Updated: November 2025*
 
-**Remember: Ethical hacking is about making the internet safer, not exploiting it for personal gain. Always act with integrity.** 🛡️
+**Remember: Ethical hacking is about making the internet safer, not exploiting it for personal gain. Always act with integrity.** 

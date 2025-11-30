@@ -32,7 +32,7 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:   "scanner",
 		Short: "Web Payment Security Scanner",
-		Long:  `🛡️ Payment scanner with WebSocket support`,
+		Long:  ` Payment scanner with WebSocket support`,
 		Version: version,
 		Run:     runScan,
 	}
@@ -79,7 +79,7 @@ func main() {
 
 func runScan(cmd *cobra.Command, args []string) {
 	logger := utils.NewLogger(verbose)
-	logger.Banner("🛡️ Web Payment Scanner v" + version)
+	logger.Banner("Web Payment Scanner v" + version)
 	
 	if !utils.IsValidURL(targetURL) {
 		logger.Fatal(fmt.Errorf("invalid target URL"))
@@ -287,7 +287,7 @@ func runScan(cmd *cobra.Command, args []string) {
 	htmlFile, _ := reporter.GenerateHTMLReport(result, outputDir)
 	logger.Success("HTML: %s", htmlFile)
 	
-	color.Green("\n✨ Scan completed!")
+	color.Green("\nScan completed!")
 }
 
 func truncate(s string, maxLen int) string {

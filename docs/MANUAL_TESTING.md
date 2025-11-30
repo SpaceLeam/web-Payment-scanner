@@ -10,7 +10,7 @@ This guide provides step-by-step instructions for manually testing the Web Payme
 
 ---
 
-## 🚀 Step 1: Basic Connectivity Test
+##  Step 1: Basic Connectivity Test
 
 Before running a full scan, verify the scanner can connect to your target.
 
@@ -33,7 +33,7 @@ Run a quick discovery scan:
 
 ---
 
-## 🔐 Step 2: Authenticated Scan
+##  Step 2: Authenticated Scan
 
 Most payment flaws require being logged in.
 
@@ -54,7 +54,7 @@ Most payment flaws require being logged in.
 
 ---
 
-## 🏎️ Step 3: Testing Race Conditions
+##  Step 3: Testing Race Conditions
 
 **Scenario**: Trying to use a single-use coupon multiple times.
 
@@ -73,7 +73,7 @@ Most payment flaws require being logged in.
 
 ---
 
-## 💰 Step 4: Testing Price Manipulation
+##  Step 4: Testing Price Manipulation
 
 **Scenario**: Changing the price of an item in the cart.
 
@@ -92,7 +92,7 @@ Most payment flaws require being logged in.
 
 ---
 
-## 🔑 Step 5: Testing IDOR
+##  Step 5: Testing IDOR
 
 **Scenario**: Viewing another user's order.
 
@@ -110,7 +110,7 @@ Most payment flaws require being logged in.
 
 ---
 
-## 📝 Troubleshooting
+##  Troubleshooting
 
 **Browser closes too fast?**
 - The scanner closes the browser after session extraction.
@@ -126,7 +126,7 @@ Most payment flaws require being logged in.
 
 ---
 
-## ⚠️ Safety Warning
+##  Safety Warning
 
 - **DO NOT** run this against production systems without explicit permission.
 - **DO NOT** use your main personal account; you might get banned due to "hacking attempts" (race conditions, brute force).

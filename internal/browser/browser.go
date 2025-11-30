@@ -105,8 +105,8 @@ func (b *Browser) WaitForManualLogin(loginURL string, timeout time.Duration) err
 		return fmt.Errorf("failed to navigate to login page: %w", err)
 	}
 	
-	fmt.Println("\n🔐 Please complete authentication (phone + PIN)...")
-	fmt.Printf("⏱️  Timeout: %v\n", timeout)
+	fmt.Println("\n Please complete authentication (phone + PIN)...")
+	fmt.Printf("  Timeout: %v\n", timeout)
 	
 	startTime := time.Now()
 	for {

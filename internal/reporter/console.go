@@ -65,7 +65,7 @@ func PrintConsoleSummary(result models.ScanResult) {
 		}
 		table.Render()
 	} else {
-		color.Green("✅ No vulnerabilities found.")
+		color.Green("No vulnerabilities found.")
 	}
 	
 	fmt.Println()

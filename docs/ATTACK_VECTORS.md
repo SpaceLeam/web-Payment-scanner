@@ -1,8 +1,8 @@
-# 🛡️ Attack Vectors & Vulnerabilities
+#  Attack Vectors & Vulnerabilities
 
 This document details the specific vulnerabilities detected by the Web Payment Scanner.
 
-## 1. Race Conditions 🏎️
+## 1. Race Conditions 
 
 **Description:**
 Occurs when a system performs an action (like checking a balance or inventory) and then updates the state, but fails to lock the resource during the process. Concurrent requests can exploit this gap.
@@ -19,7 +19,7 @@ Occurs when a system performs an action (like checking a balance or inventory) a
 
 ---
 
-## 2. Price Manipulation 💰
+## 2. Price Manipulation 
 
 **Description:**
 Occurs when the server trusts the price or amount sent by the client without validating it against the backend source of truth.
@@ -41,7 +41,7 @@ Occurs when the server trusts the price or amount sent by the client without val
 
 ---
 
-## 3. IDOR (Insecure Direct Object References) 🔑
+## 3. IDOR (Insecure Direct Object References) 
 
 **Description:**
 Occurs when an application exposes a reference to an internal implementation object (like a database key) without access control checks.
@@ -58,7 +58,7 @@ Occurs when an application exposes a reference to an internal implementation obj
 
 ---
 
-## 4. OTP/2FA Bypass 🔐
+## 4. OTP/2FA Bypass 
 
 **Description:**
 Weaknesses in One-Time Password implementations, such as lack of rate limiting or predictable codes.
@@ -75,7 +75,7 @@ Weaknesses in One-Time Password implementations, such as lack of rate limiting o
 
 ---
 
-## 5. Webhook/Callback Bypass 🪝
+## 5. Webhook/Callback Bypass 
 
 **Description:**
 Payment gateways (Stripe, PayPal, etc.) send webhooks to notify your server of payment status. If these are not verified, an attacker can fake a successful payment.

@@ -38,7 +38,7 @@ func (e *Engine) StartDiscovery() error {
 	e.Logger.Info("Checking for WAF...")
 	waf := DetectWAF(e.Config.TargetURL)
 	if waf != "None Detected" {
-		e.Logger.Warn("⚠️  WAF Detected: %s", waf)
+		e.Logger.Warn("WAF Detected: %s", waf)
 		e.Logger.Warn("Scanning might be blocked. Reducing speed...")
 		// Reduce concurrency or add delays if needed
 	} else {

@@ -41,7 +41,7 @@ const htmlTemplate = `
 </head>
 <body>
     <div class="header">
-        <h1>🛡️ Payment Security Scan Report</h1>
+        <h1>Payment Security Scan Report</h1>
         <p><strong>Target:</strong> {{.Target}}</p>
         <p><strong>Date:</strong> {{.StartTime.Format "Jan 02, 2006 15:04:05"}}</p>
         <p><strong>Duration:</strong> {{.Duration}}</p>
@@ -71,11 +71,11 @@ const htmlTemplate = `
     </div>
     {{else}}
     <div class="card">
-        <p>✅ No vulnerabilities found.</p>
+        <p>No vulnerabilities found.</p>
     </div>
     {{end}}
 
-    <h2>🔍 Discovered Endpoints</h2>
+    <h2>Discovered Endpoints</h2>
     <div class="card">
         <table>
             <thead>

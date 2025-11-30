@@ -1,30 +1,30 @@
-# 🛡️ Web Payment Scanner
+# Web Payment Scanner
 
-> **Automated security scanner for payment flow vulnerabilities**
+> Automated security scanner for payment flow vulnerabilities
 
 [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Playwright](https://img.shields.io/badge/Playwright-v0.5200.1-45ba4b?style=flat&logo=playwright)](https://playwright.dev/)
 
-**⚠️ FOR AUTHORIZED PENETRATION TESTING ONLY**
+**WARNING: FOR AUTHORIZED PENETRATION TESTING ONLY**
 
 This tool is designed for security professionals to test payment systems with proper authorization. Unauthorized use is illegal and unethical.
 
 ---
 
-## ✨ Features
+## Features
 
-- 🏎️ **Race Condition Detection** - Test for concurrent request vulnerabilities
-- 💰 **Price Manipulation Testing** - Detect price tampering vulnerabilities
-- 🔑 **IDOR Testing** - Find insecure direct object references
-- 🔐 **OTP Security Analysis** - Test OTP rate limiting and brute force protection
-- 🪝 **Webhook Authentication** - Verify callback signature validation
-- 🌐 **Browser Automation** - Playwright-powered session extraction
-- 📊 **Comprehensive Reporting** - JSON, HTML, and console output
+- **Race Condition Detection** - Test for concurrent request vulnerabilities
+- **Price Manipulation Testing** - Detect price tampering vulnerabilities
+- **IDOR Testing** - Find insecure direct object references
+- **OTP Security Analysis** - Test OTP rate limiting and brute force protection
+- **Webhook Authentication** - Verify callback signature validation
+- **Browser Automation** - Playwright-powered session extraction
+- **Comprehensive Reporting** - JSON, HTML, and console output
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -57,7 +57,7 @@ make run
 
 ---
 
-## 📦 Tech Stack
+## Tech Stack
 
 - **Language**: Go 1.22
 - **Browser Automation**: Playwright v0.5200.1
@@ -69,7 +69,7 @@ make run
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 web-Payment-scanner/
@@ -88,7 +88,7 @@ web-Payment-scanner/
 
 ---
 
-## 🔍 Attack Vectors
+## Attack Vectors
 
 ### Implemented Tests
 
@@ -116,7 +116,7 @@ web-Payment-scanner/
 
 ---
 
-## 📝 Development
+## Development
 
 ### Running Tests
 
@@ -146,7 +146,7 @@ make install
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - [Usage Guide](docs/USAGE.md) - Detailed usage instructions
 - [Attack Vectors](docs/ATTACK_VECTORS.md) - Technical details on each test
@@ -154,23 +154,23 @@ make install
 
 ---
 
-## ⚖️ Legal Notice
+## Legal Notice
 
 **IMPORTANT**: This tool is intended for:
-- ✅ Authorized security testing of systems you own or have permission to test
-- ✅ Bug bounty programs with explicit scope
-- ✅ Educational purposes in controlled environments
+- Authorized security testing of systems you own or have permission to test
+- Bug bounty programs with explicit scope
+- Educational purposes in controlled environments
 
 **ILLEGAL USES**:
-- ❌ Testing systems without authorization
-- ❌ Causing financial harm or fraud
-- ❌ Any malicious activities
+- Testing systems without authorization
+- Causing financial harm or fraud
+- Any malicious activities
 
 The authors are not responsible for misuse. By using this tool, you agree to use it ethically and legally.
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please:
 1. Fork the repository
@@ -180,13 +180,13 @@ Contributions are welcome! Please:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Playwright Team](https://playwright.dev/) - Browser automation
 - [Cobra](https://cobra.dev/) - CLI framework
@@ -194,8 +194,8 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) for deta
 
 ---
 
-## 📧 Contact
+## Contact
 
 For security concerns or questions, please open an issue on GitHub.
 
-**Remember: Use responsibly and ethically! 🛡️**
+**Remember: Use responsibly and ethically.**
