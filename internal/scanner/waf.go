@@ -1,8 +1,6 @@
-```go
 package scanner
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
