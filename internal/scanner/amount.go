@@ -280,22 +280,3 @@ func testAmountOverflow(endpoint models.Endpoint, session *models.Session) []mod
 	return []models.Vulnerability{}
 }
 
-// normalizeUnicodeDigits converts unicode digits to ASCII
-func normalizeUnicodeDigits(s string) string {
-	result := ""
-	for _, r := range s {
-		if unicode.IsDigit(r) {
-			// Convert to ASCII digit
-			digit := r - '0'
-			if digit >= 0 && digit <= 9 {
-				result += string('0' + digit)
-			} else {
-				result += string(r)
-			}
-		} else {
-			result += string(r)
-		}
-	}
-	return result
-}
-

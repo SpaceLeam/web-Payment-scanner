@@ -450,9 +450,10 @@ func containsAuthToken(msg WSMessage) bool {
 	}
 	
 	// Check in string data
-	authKeywords := []string{"token", "authToken", "sessionToken", "Bearer"}
+	authKeywords := []string{"token", "authtoken", "sessiontoken", "bearer"}
+	dataLower := strings.ToLower(msg.Data)
 	for _, kw := range authKeywords {
-		if contains(msg.Data, kw) {
+		if contains(dataLower, kw) {
 			return true
 		}
 	}

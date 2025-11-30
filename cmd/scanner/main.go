@@ -126,8 +126,8 @@ func runScan(cmd *cobra.Command, args []string) {
 				logger.Success("Using cached session (age: %s)", age.Round(time.Second))
 				session = cachedSession
 			} else {
-				logger.Warn("Cached session expired (age: %s > %s TTL)", 
-					time.Since(cachedSession.CreatedAt).Round(time.Hour),
+				logger.Warn("Session expired: %s old (TTL: %s)", 
+					time.Since(cachedSession.CreatedAt).Round(time.Minute),
 					sessionTTL)
 			}
 		}

@@ -205,12 +205,13 @@ func analyzeRaceResults(endpoint models.Endpoint, results []*RaceResult) []model
 			Description: fmt.Sprintf("Server processed %d out of %d concurrent identical requests successfully. This indicates lack of proper concurrency control.", successCount, len(results)),
 			Endpoint:    endpoint.URL,
 			Method:      endpoint.Method,
-			Proof:       fmt.Sprintf("%d concurrent requests sent, %d succeeded. Timing spread: %v. Negative time: %v", len(results), successCount, timingSpread, hasNegativeTime),
+			Proof:       fmt.Sprintf("%d concurrent requests sent, %d succeeded. Timing spread: %v. Negative timestamps detected: %v", len(results), successCount, timingSpread, hasNegativeTime),
 			Timestamp:   time.Now(),
 			CWE:         "CWE-362", // Concurrent Execution using Shared Resource
 			CVSSScore:   9.1,
 			CVSSVector:  "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:H",
 			Confidence:  "High",
+			Impact:      "Could cause negative balance, double charges, or race to zero attacks",
 			Remediation: `Implement proper concurrency control:
 
 // Go example with database transaction:

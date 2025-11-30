@@ -87,7 +87,7 @@ type EvasionContext struct {
 }
 
 // ApplyEvasion modifies request to evade WAF
-func (ec *EvasionContext) ApplyEvasion(req *http.Request, payload string) string {
+func (ec *EvasionContext) ApplyEvasion(req *http.Request, payload string) (*http.Request, string) {
 	if ec.CaseVariation {
 		payload = applyCaseVariation(payload)
 	}
@@ -100,7 +100,7 @@ func (ec *EvasionContext) ApplyEvasion(req *http.Request, payload string) string
 		req.Method = "PUT" // Try alternative verb
 	}
 	
-	return payload
+	return req, payload
 }
 
 // CheckRateLimiting detects if response indicates rate limiting
