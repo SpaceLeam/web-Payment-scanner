@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-	"unicode"
 
 	"github.com/SpaceLeam/web-Payment-scanner/internal/models"
 	"github.com/SpaceLeam/web-Payment-scanner/internal/utils"
