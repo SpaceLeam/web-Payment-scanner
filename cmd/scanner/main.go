@@ -1,4 +1,4 @@
-package main
+	package main
 
 import (
 	"crypto/md5"
@@ -24,8 +24,9 @@ var (
 	timeout, maxDepth int
 	enableCrawl, enableWayback, enableCommonPaths, enableJSAnalysis bool
 	enableRace, enablePrice, enableIDOR, enableOTP, enableCallback, enableAmount, enableIdempotency bool
-	enableWSInterceptor bool // NEW
-	skipSessionCache bool    // NEW
+	enableSQLInjection, enableNoSQLInjection, enableJWTTesting, enableGraphQL bool // NEW!
+	enableWSInterceptor bool
+	skipSessionCache bool
 )
 
 func main() {
@@ -64,6 +65,12 @@ func main() {
 	rootCmd.Flags().BoolVar(&enableCallback, "callback", true, "Enable Callback Auth")
 	rootCmd.Flags().BoolVar(&enableAmount, "amount", true, "Enable Amount Validation")
 	rootCmd.Flags().BoolVar(&enableIdempotency, "idempotency", true, "Enable Idempotency")
+	
+	// New Scanners (2025)
+	rootCmd.Flags().BoolVar(&enableSQLInjection, "sql", true, "Enable SQL Injection")
+	rootCmd.Flags().BoolVar(&enableNoSQLInjection, "nosql", true, "Enable NoSQL Injection")
+	rootCmd.Flags().BoolVar(&enableJWTTesting, "jwt", true, "Enable JWT Testing")
+	rootCmd.Flags().BoolVar(&enableGraphQL, "graphql", true, "Enable GraphQL Testing")
 	
 	// WebSocket
 	rootCmd.Flags().BoolVar(&enableWSInterceptor, "ws-intercept", true, "Enable WebSocket interceptor")
@@ -106,6 +113,10 @@ func runScan(cmd *cobra.Command, args []string) {
 		EnableCallbackAuth: enableCallback,
 		EnableAmountValidation: enableAmount,
 		EnableIdempotency:  enableIdempotency,
+		EnableSQLInjection: enableSQLInjection,
+		EnableNoSQLInjection: enableNoSQLInjection,
+		EnableJWTTesting:   enableJWTTesting,
+		EnableGraphQL:      enableGraphQL,
 		Domain:             utils.ExtractDomain(targetURL),
 	}
 	

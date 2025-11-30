@@ -109,7 +109,24 @@ func (e *Engine) StartDiscovery() error {
 		}()
 	}
 	
-	// 4. JS Analysis
+	// 4. GraphQL Discovery
+	if e.Config.EnableGraphQL {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			gql := discovery.NewGraphQLScanner(e.Config.TargetURL)
+			eps, err := gql.Discover()
+			if err != nil {
+				e.Logger.Error("GraphQL discovery failed: %v", err)
+				return
+			}
+			mu.Lock()
+			allEndpoints = append(allEndpoints, eps...)
+			mu.Unlock()
+		}()
+	}
+	
+	// 5. JS Analysis
 	if e.Config.EnableJSAnalysis {
 		// JS analysis needs browser, so run it sequentially or with care
 		// For now, let's skip parallel execution for this one or assume browser is thread-safe enough
@@ -151,6 +168,30 @@ func (e *Engine) StartScanning() error {
 		// IDOR
 		if e.Config.EnableIDOR {
 			vulns := TestIDOR(ep, e.Session)
+			e.addVulnerabilities(vulns)
+		}
+		
+		// SQL Injection (NEW!)
+		if e.Config.EnableSQLInjection {
+			vulns := TestPaymentSQLInjection(ep, e.Session)
+			e.addVulnerabilities(vulns)
+		}
+		
+		// NoSQL Injection (NEW!)
+		if e.Config.EnableNoSQLInjection {
+			vulns := TestNoSQLInjection(ep, e.Session)
+			e.addVulnerabilities(vulns)
+		}
+		
+		// JWT Vulnerabilities (NEW!)
+		if e.Config.EnableJWTTesting {
+			vulns := TestJWTVulnerabilities(ep, e.Session)
+			e.addVulnerabilities(vulns)
+		}
+		
+		// GraphQL Vulnerabilities (NEW!)
+		if ep.Type == "graphql" && e.Config.EnableGraphQL {
+			vulns := TestGraphQLVulnerabilities(ep, e.Session)
 			e.addVulnerabilities(vulns)
 		}
 	}

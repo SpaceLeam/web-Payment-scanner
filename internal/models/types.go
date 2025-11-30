@@ -30,6 +30,10 @@ type ScanConfig struct {
 	EnableCallbackAuth       bool
 	EnableAmountValidation   bool
 	EnableIdempotency        bool
+	EnableSQLInjection       bool
+	EnableNoSQLInjection     bool
+	EnableJWTTesting         bool
+	EnableGraphQL            bool
 	
 	// Discovery settings
 	EnableCrawl       bool
