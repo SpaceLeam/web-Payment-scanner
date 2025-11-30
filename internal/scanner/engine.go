@@ -54,8 +54,8 @@ func (e *Engine) StartDiscovery() error {
 	// Rate Limiter for discovery (conservative)
 	_ = utils.NewRateLimiter(10) // 10 req/sec default (unused for now)
 	
-	// 1. Crawler
-	if e.Config.EnableCrawl {
+	// 1. Crawler (requires browser)
+	if e.Config.EnableCrawl && e.Browser != nil {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -70,6 +70,8 @@ func (e *Engine) StartDiscovery() error {
 			allEndpoints = append(allEndpoints, eps...)
 			mu.Unlock()
 		}()
+	} else if e.Config.EnableCrawl && e.Browser == nil {
+		e.Logger.Warn("Crawler skipped (no browser available - using cached session)")
 	}
 	
 	// 2. Wayback Machine
